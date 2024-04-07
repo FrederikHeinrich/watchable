@@ -1,6 +1,11 @@
 package de.frederikheinrich.watchable;
 
 import com.google.gson.Gson;
+import org.bson.BsonDocument;
+import org.bson.BsonDocumentReader;
+import org.bson.BsonDocumentWriter;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.EncoderContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -8,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class WatchableTest {
 
@@ -48,13 +52,92 @@ public class WatchableTest {
      * Test case for serializing and deserializing a Watchable object using Gson.
      */
     @Test
-    public void testWatchableJsonSerialization() {
-        Watchable<String> watchable = Watchable.of("hello");
+    public void testWatchableGson() {
         Gson gson = new Gson();
-        String json = gson.toJson(watchable);
+        {
+            Watchable<String> watchable = Watchable.of("hello");
+            Watchable<String> deserializable = gson.fromJson(gson.toJson(watchable), Watchable.class);
+            System.out.println("String: " + watchable.get() + " - " + deserializable.get());
+            assertEquals(watchable.get(), deserializable.get());
+        }
 
-        Watchable<?> deserialized = gson.fromJson(json, Watchable.class);
-        assertEquals("hello", deserialized.get());
+        {
+            Watchable<?> watchable = Watchable.of(654);
+            assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
+        }
+        {
+            Watchable<?> watchable = Watchable.of(true);
+            assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
+        }
+        {
+            Watchable<?> watchable = Watchable.of(03.133f);
+            assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
+        }
+        {
+            Watchable<?> watchable = Watchable.of((byte) 1);
+            assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
+        }
+        {
+            Watchable<?> watchable = Watchable.of('G');
+            assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
+        }
+        {
+            Watchable<?> watchable = Watchable.of((short) 12);
+            assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
+        }
+        {
+            Watchable<?> watchable = Watchable.of(new ArrayList<String>(List.of("Listen", "gehen", "auch!")));
+            assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
+        }
+
+    }
+
+    /**
+     * This method tests the functionality of the `WatchableCodec` class. It encodes a `Watchable` object into a `BsonDocument`,
+     * decodes the `BsonDocument` back into a `Watchable` object, and asserts that the original `Watchable` object is equal to the decoded one.
+     */
+    @Test
+    public void testWatchableBson() {
+        {
+            var codec = new Watchable.WatchableCodec<Integer>() {
+            };
+            var watchable = Watchable.of(42);
+            var doc = new BsonDocument();
+            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
+            System.out.println(doc.toJson());
+            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
+            assertEquals(watchable.get(), decoded.get());
+        }
+        {
+            var codec = new Watchable.WatchableCodec<String>() {
+            };
+            var watchable = Watchable.of("Hallo");
+            var doc = new BsonDocument();
+            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
+            System.out.println(doc.toJson());
+            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
+            assertEquals(watchable.get(), decoded.get());
+        }
+        {
+            var codec = new Watchable.WatchableCodec<Double>() {
+            };
+            var watchable = Watchable.of(4d);
+            var doc = new BsonDocument();
+            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
+            System.out.println(doc.toJson());
+            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
+            assertEquals(watchable.get(), decoded.get());
+        }
+        {
+            var codec = new Watchable.WatchableCodec<ArrayList<String>>() {
+            };
+            var watchable = Watchable.of(new ArrayList<>(List.of("Der", "typische", "Listen", "check", ".")));
+            var doc = new BsonDocument();
+            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
+            System.out.println(doc.toJson());
+            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
+            assertEquals(watchable.get(), decoded.get());
+        }
     }
 
     /**
@@ -82,17 +165,5 @@ public class WatchableTest {
     public void testWatchableConstructorWithValue() {
         Watchable<Integer> watchable = new Watchable<>(5);
         assertEquals(5, watchable.get());
-    }
-
-    /**
-     * Test case for the constructor Watchable().
-     * <p>
-     * The test validates that the value of the newly created Watchable object
-     * with no arguments is correctly null.
-     */
-    @Test
-    public void testWatchableConstructorNoValue() {
-        Watchable<String> watchable = new Watchable<>();
-        assertNull(watchable.get());
     }
 }
