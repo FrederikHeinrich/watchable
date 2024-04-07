@@ -197,7 +197,7 @@ public class Watchable<T> {
         public Watchable<T> decode(BsonReader reader, DecoderContext context) {
             reader.readStartDocument();
             reader.readName("type");
-            var type = reader.readString();
+            String type = reader.readString();
             reader.readName("value");
             T value = null;
             try {
