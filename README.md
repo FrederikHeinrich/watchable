@@ -41,9 +41,7 @@ Monitor changes to this object by adding a listener:
 
 ```java
 watchable.watch((oldValue, newValue) ->{
-        System.out.
-
-println("Value changed from "+oldValue +" to "+newValue);
+        System.out.println("Value changed from " + oldValue + " to " + newValue + ".");
 });
 ```
 
