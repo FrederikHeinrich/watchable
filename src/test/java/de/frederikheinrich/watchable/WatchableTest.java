@@ -1,17 +1,13 @@
 package de.frederikheinrich.watchable;
 
 import com.google.gson.Gson;
-import org.bson.BsonDocument;
-import org.bson.BsonDocumentReader;
-import org.bson.BsonDocumentWriter;
-import org.bson.codecs.DecoderContext;
-import org.bson.codecs.EncoderContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static de.frederikheinrich.watchable.Watchable.watch;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WatchableTest {
@@ -21,7 +17,7 @@ public class WatchableTest {
      */
     @Test
     public void testWatchableValue() {
-        Watchable<Integer> watchable = Watchable.of(5);
+        Watchable<Integer> watchable = watch(5);
         assertEquals(5, watchable.get());
 
         watchable.set(10);
@@ -36,11 +32,11 @@ public class WatchableTest {
      */
     @Test
     public void testWatchableListener() {
-        Watchable<Integer> watchable = Watchable.of(5);
-        watchable.watch((integer, integer2) -> {
+        Watchable<Integer> watchable = watch(5);
+        watchable.on((integer, integer2) -> {
 
         });
-        watchable.watch((oldValue, newValue) -> {
+        watchable.on((oldValue, newValue) -> {
             assertEquals(5, oldValue);
             assertEquals(10, newValue);
         });
@@ -55,90 +51,84 @@ public class WatchableTest {
     public void testWatchableGson() {
         Gson gson = new Gson();
         {
-            Watchable<String> watchable = Watchable.of("hello");
+            Watchable<String> watchable = watch("hello");
             Watchable<String> deserializable = gson.fromJson(gson.toJson(watchable), Watchable.class);
             System.out.println("String: " + watchable.get() + " - " + deserializable.get());
             assertEquals(watchable.get(), deserializable.get());
         }
 
         {
-            Watchable<?> watchable = Watchable.of(654);
+            Watchable<?> watchable = watch(654);
             assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
         }
         {
-            Watchable<?> watchable = Watchable.of(true);
+            Watchable<?> watchable = watch(true);
             assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
         }
         {
-            Watchable<?> watchable = Watchable.of(03.133f);
+            Watchable<?> watchable = watch(03.133f);
             assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
         }
         {
-            Watchable<?> watchable = Watchable.of((byte) 1);
+            Watchable<?> watchable = watch((byte) 1);
             assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
         }
         {
-            Watchable<?> watchable = Watchable.of('G');
+            Watchable<?> watchable = watch('G');
             assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
         }
         {
-            Watchable<?> watchable = Watchable.of((short) 12);
+            Watchable<?> watchable = watch((short) 12);
             assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
         }
         {
-            Watchable<?> watchable = Watchable.of(new ArrayList<String>(List.of("Listen", "gehen", "auch!")));
+            Watchable<?> watchable = watch(new ArrayList<String>(List.of("Listen", "gehen", "auch!")));
             assertEquals(watchable.get(), gson.fromJson(gson.toJson(watchable), Watchable.class).get());
         }
 
     }
 
     /**
+     * <b>screw it... just use my Storage API :)</b>
+     * <p>
      * This method tests the functionality of the `WatchableCodec` class. It encodes a `Watchable` object into a `BsonDocument`,
      * decodes the `BsonDocument` back into a `Watchable` object, and asserts that the original `Watchable` object is equal to the decoded one.
      */
-    @Test
-    public void testWatchableBson() {
-        {
-            var codec = new Watchable.WatchableCodec<Integer>() {
-            };
-            var watchable = Watchable.of(42);
-            var doc = new BsonDocument();
-            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
-            System.out.println(doc.toJson());
-            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
-            assertEquals(watchable.get(), decoded.get());
-        }
-        {
-            var codec = new Watchable.WatchableCodec<String>() {
-            };
-            var watchable = Watchable.of("Hallo");
-            var doc = new BsonDocument();
-            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
-            System.out.println(doc.toJson());
-            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
-            assertEquals(watchable.get(), decoded.get());
-        }
-        {
-            var codec = new Watchable.WatchableCodec<Double>() {
-            };
-            var watchable = Watchable.of(4d);
-            var doc = new BsonDocument();
-            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
-            System.out.println(doc.toJson());
-            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
-            assertEquals(watchable.get(), decoded.get());
-        }
-        {
-            var codec = new Watchable.WatchableCodec<ArrayList<String>>() {
-            };
-            var watchable = Watchable.of(new ArrayList<>(List.of("Der", "typische", "Listen", "check", ".")));
-            var doc = new BsonDocument();
-            codec.encode(new BsonDocumentWriter(doc), watchable, EncoderContext.builder().build());
-            System.out.println(doc.toJson());
-            var decoded = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder().build());
-            assertEquals(watchable.get(), decoded.get());
-        }
-    }
+//    @Test
+//    public void testWatchableMongo() {
+//        CodecProvider pojoCodecProvider = PojoCodecProvider.builder().automatic(true).build();
+//        CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
+//
+//        //CodecRegistries.fromCodecs(new Watchable.WatchableCodec<>());
+//
+//        try (TransitionWalker.ReachedState<RunningMongodProcess> running = Mongod.instance()
+//                .withProcessOutput(
+//                        Start.to(ProcessOutput.class)
+//                                .initializedWith(ProcessOutput.silent())
+//                )
+//                .start(Version.Main.PRODUCTION)) {
+//            try (MongoClient mongo = MongoClients.create("mongodb://" + running.current().getServerAddress())) {
+//                MongoDatabase db = mongo.getDatabase("watchable");
+//                MongoCollection<TestElement> col = db.getCollection("testElement", TestElement.class).withCodecRegistry(pojoCodecRegistry);
+//                var insert = col.insertOne(new TestElement("test", 50));
+//                System.out.println("Inserted " + insert);
+//
+//                MongoCollection<Document> colDoc = db.getCollection("testElement");
+//                colDoc.find().forEach(document -> {
+//                    System.out.println("Found " + document);
+//                });
+//
+//                col.find().forEach(testElement -> {
+//                    System.out.println("Found Element " + testElement);
+//                    testElement.name().watch((oldValue, newValue) -> {
+//                        System.out.println("Old value " + oldValue + " - " + newValue);
+//                    });
+//                    testElement.name().set("ASDASADASd");
+//                });
+//            }
+//        }
+//    }
+
 
     /**
      * Test case for the andThen(ChangeConsumer<T> after) method in the ChangeConsumer interface.
@@ -163,7 +153,7 @@ public class WatchableTest {
      */
     @Test
     public void testWatchableConstructorWithValue() {
-        Watchable<Integer> watchable = new Watchable<>(5);
+        Watchable<Integer> watchable = new Watchable<>(5, Integer.class);
         assertEquals(5, watchable.get());
     }
 }

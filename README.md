@@ -34,13 +34,13 @@ implementation 'com.github.FrederikHeinrich:watchable:Tag'
 Create a `Watchable` object with an initial value:
 
 ```java
-Watchable<Integer> watchable = Watchable.of(5);
+Watchable<Integer> watchable = Watchable.watch(5);
 ```
 
 Monitor changes to this object by adding a listener:
 
 ```java
-watchable.watch((oldValue, newValue) ->{
+watchable.on((oldValue, newValue) ->{
         System.out.println("Value changed from " + oldValue + " to " + newValue + ".");
 });
 ```
